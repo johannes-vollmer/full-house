@@ -4,6 +4,8 @@ import {AnimationDriver, NoopAnimationDriver, ɵWebAnimationsDriver as WebAnimat
 import {TranslateService} from "@ngx-translate/core";
 import LAN_EN from './../i18n/en.json';
 import LAN_DE from './../i18n/de.json';
+import {Store} from "@ngxs/store";
+import {AppLanguage, SetLanguage, SettingsState} from "../store/settings/settings.state";
 
 export const configureSvgIcons = (iconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) => {
   iconRegistry.addSvgIconResolver((name, namespace) => {
@@ -22,9 +24,15 @@ export const provideAnimationDriverBasedOnUserPreferences = (): AnimationDriver 
   return prefersReducedMotion ? noop : driver;
 };
 
-export const configureTranslations = (translate: TranslateService) => {
+export const configureTranslations = (translate: TranslateService, store: Store) => {
   translate.setFallbackLang('en');
   translate.setTranslation('de', LAN_DE, false);
   translate.setTranslation('en', LAN_EN, false);
-  translate.use(translate.getBrowserLang());
+
+  const storedLanguage = store.selectSnapshot(SettingsState.language);
+  const language: AppLanguage = storedLanguage ?? (translate.getBrowserLang() === 'de' ? 'de' : 'en');
+  if (!storedLanguage) {
+    store.dispatch(new SetLanguage(language));
+  }
+  translate.use(language);
 };
